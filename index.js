@@ -1,16 +1,53 @@
-const app = require('express')()
-const http = require('http').createServer(app)
-const socketIo = require('socket.io')(http)
+const server = require('http').createServer()
+const io = require('socket.io')(server)
 
-app.get('/', (req, res) => {
-  res.send('Server is running')
-})
+io.on('connect', function (client) {
 
-socketIo.on('connection', (userSocket) => {
-  userSocket.on('send_message', (data) => {
-    console.log(data)
-    userSocket.broadcast.emit('receive_message', data)
+  console.log('client connect...', client.id);
+
+  client.on('typing', function name(data) {
+    console.log(data);
+    io.emit('typing', data)
+  })
+
+  client.on('stop_typing', (d) => {
+    console.log('Stop typing', d)
+    io.emit('stop_typing', d);
+  })
+
+  client.on('message', function name(data) {
+    console.log(data);
+    io.emit('message', data)
+  })
+
+  client.on('send_message', function name(data) {
+    console.log('send_message', data)
+    io.emit('message', data)
+  })
+
+  client.on('location', function name(data) {
+    console.log(data);
+    io.emit('location', data);
+  })
+
+  client.on('connect', function () {
+    console.log('connect');
+  })
+
+  client.on('disconnect', function () {
+    console.log('client disconnect...', client.id)
+    // handleDisconnect()
+  })
+
+  client.on('error', function (err) {
+    console.log('received error from client:', client.id)
+    console.log(err)
   })
 })
 
-app.listen(3000)
+var server_port = process.env.PORT || 3000;
+server.listen(server_port, function (err) {
+  if (err) throw err
+  console.log('Listening on port %d', server_port);
+});
+
